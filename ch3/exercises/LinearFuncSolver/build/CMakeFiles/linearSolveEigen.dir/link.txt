@@ -1,1 +1,0 @@
-/usr/bin/c++  -std=c++14 -O2  -msse4 -O3 -DNDEBUG  -rdynamic CMakeFiles/linearSolveEigen.dir/EigenLinearSolving.cpp.o  -o linearSolveEigen 
