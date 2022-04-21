@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/mt/Miller/VSLAM/project/exercises/Ceres_Learning/linearFunc_analytic.cpp
+vector
+-
+ceres/ceres.h
+-
+glog/logging.h
+/home/mt/Miller/VSLAM/project/exercises/Ceres_Learning/glog/logging.h
+
