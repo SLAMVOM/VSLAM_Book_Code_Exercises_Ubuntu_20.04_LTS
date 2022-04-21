@@ -1,1 +1,0 @@
-/usr/bin/c++    -rdynamic CMakeFiles/usingEigenGeo.dir/useGeometry.cpp.o  -o usingEigenGeo 

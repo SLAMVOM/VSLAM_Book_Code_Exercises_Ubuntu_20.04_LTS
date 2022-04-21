@@ -1,4 +1,0 @@
-/home/mt/Miller/VSLAM/project/exercises/Levenberg_Marquardt/build/CMakeFiles/rebuild_cache.dir
-/home/mt/Miller/VSLAM/project/exercises/Levenberg_Marquardt/build/CMakeFiles/edit_cache.dir
-/home/mt/Miller/VSLAM/project/exercises/Levenberg_Marquardt/build/CMakeFiles/LMCurveFitVec.dir
-/home/mt/Miller/VSLAM/project/exercises/Levenberg_Marquardt/build/CMakeFiles/LMCurveFit.dir

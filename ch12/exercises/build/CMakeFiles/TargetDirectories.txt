@@ -1,4 +1,0 @@
-/home/mt/Miller/VSLAM/project/ch12/exercises/build/CMakeFiles/rebuild_cache.dir
-/home/mt/Miller/VSLAM/project/ch12/exercises/build/CMakeFiles/DenseInvDepthAffine.dir
-/home/mt/Miller/VSLAM/project/ch12/exercises/build/CMakeFiles/edit_cache.dir
-/home/mt/Miller/VSLAM/project/ch12/exercises/build/CMakeFiles/DenseInvDepth.dir

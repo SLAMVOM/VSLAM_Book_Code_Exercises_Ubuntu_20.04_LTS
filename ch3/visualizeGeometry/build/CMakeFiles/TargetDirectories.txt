@@ -1,3 +1,0 @@
-/home/mt/Miller/VSLAM/project/ch3/visualizeGeometry/build/CMakeFiles/rebuild_cache.dir
-/home/mt/Miller/VSLAM/project/ch3/visualizeGeometry/build/CMakeFiles/edit_cache.dir
-/home/mt/Miller/VSLAM/project/ch3/visualizeGeometry/build/CMakeFiles/visualizeGeometry.dir
