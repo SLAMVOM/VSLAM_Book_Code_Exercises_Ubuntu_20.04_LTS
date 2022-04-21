@@ -1,5 +1,0 @@
-/home/mt/Miller/VSLAM/project/ch9/build/CMakeFiles/bundle_adjustment_g2o.dir
-/home/mt/Miller/VSLAM/project/ch9/build/CMakeFiles/edit_cache.dir
-/home/mt/Miller/VSLAM/project/ch9/build/CMakeFiles/bundle_adjustment_ceres.dir
-/home/mt/Miller/VSLAM/project/ch9/build/CMakeFiles/rebuild_cache.dir
-/home/mt/Miller/VSLAM/project/ch9/build/CMakeFiles/bal_common.dir
