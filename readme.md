@@ -2,17 +2,15 @@
 
 -------------------------
 
-The material in the VSLAM book was initially developed on Ubuntu 18 with OpenCV 3 and C++11 standard. The code and exercises in this repo are run under Ubuntu 20.04 LTS (mainly) working with OpenCV 4 and C++14.
+The material in the VSLAM book was initially developed on Ubuntu 18 with OpenCV 3 and C++11 standard. The code and exercises in this branch are run under Ubuntu 20.04 LTS (mainly) working with OpenCV 3 and C++14.
 
 #### OS: Ubuntu 20.04 LTS
-#### OpenCV version: OpenCV 4 (4.5.5)
-
-
-For code that uses OpenCV 3, please refer to one of the branches that specified OpenCV 3 in the branch name.
+#### OpenCV version: OpenCV 3 (3.4.16)
 
 -------------------------
 
 There is no guarantee that the answers and code for the exercises are errorless or bug free.
+Further exercises will not be carried out using OpenCV 3.
 
 -------------------------
 

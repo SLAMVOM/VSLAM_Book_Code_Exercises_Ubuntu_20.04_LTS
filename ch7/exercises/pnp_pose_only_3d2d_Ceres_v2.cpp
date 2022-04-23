@@ -50,10 +50,8 @@ int main(int argc, char **argv) {
     }
 
     // -- Loading images
-    // Mat img_1 = imread(argv[1], CV_LOAD_IMAGE_COLOR); // OpenCV 3
-    // Mat img_2 = imread(argv[2], CV_LOAD_IMAGE_COLOR); // OpenCV 3
-    Mat img_1 = imread(argv[1], cv::IMREAD_COLOR); // OpenCV 4
-    Mat img_2 = imread(argv[2], cv::IMREAD_COLOR); // OpenCV 4
+    Mat img_1 = cv::imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    Mat img_2 = cv::imread(argv[2], CV_LOAD_IMAGE_COLOR);
     assert(img_1.data & img_2.data && "Cannot load the images!");
 
     std::vector<KeyPoint> keypoints_1, keypoints_2;
@@ -62,8 +60,7 @@ int main(int argc, char **argv) {
     std::cout << "Number of feature correspondences found in total: " << matches.size() << std::endl;
 
     // Construct 3D points
-    // Mat d1 = imread(argv[3], CV_LOAD_IMAGE_UNCHANGED);  // depth image is single-channel 16-bits unsigned values - OpenCV 3
-    Mat d1 = imread(argv[3], cv::IMREAD_UNCHANGED);  // depth image is single-channel 16-bits unsigned values - OpenCV 4
+    Mat d1 = imread(argv[3], CV_LOAD_IMAGE_UNCHANGED); // depth image is single-channel 16-bits unsigned values
     Mat K = (Mat_<double>(3, 3) << 520.9, 0, 325.1, 0, 521.0, 249.7, 0, 0, 1);
     vector<Point3f> pts_3d;
     vector<Point2f> pts_2d;

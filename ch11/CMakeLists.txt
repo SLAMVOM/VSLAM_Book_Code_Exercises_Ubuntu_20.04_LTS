@@ -5,7 +5,7 @@ set( CMAKE_BUILD_TYPE "Release" )
 set( CMAKE_CXX_FLAGS "-std=c++14 -O3" )
 
 # OpenCV
-find_package( OpenCV REQUIRED )
+find_package( OpenCV 3.1 REQUIRED )
 include_directories( ${OpenCV_INCLUDE_DIRS} )
 
 # DBoW3

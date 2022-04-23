@@ -488,10 +488,8 @@ void evaluateDepth(const Mat &depth_truth, const Mat &depth_estimate) {
 // showing the matched points on the reference and current image
 void showEpipolarMatch(const Mat &ref, const Mat &curr, const Vector2d &px_ref, const Vector2d &px_curr) {
     Mat ref_show, curr_show;
-    // cv::cvtColor(ref, ref_show, CV_GRAY2BGR);   // convert from single band grayscale to three bands grayscale - OpenCV 3
-    // cv::cvtColor(curr, curr_show, CV_GRAY2BGR); // convert from single band grayscale to three bands grayscale - OpenCV 3
-    cv::cvtColor(ref, ref_show, cv::COLOR_GRAY2BGR);   // convert from single band grayscale to three bands grayscale - OpenCV 4
-    cv::cvtColor(curr, curr_show, cv::COLOR_GRAY2BGR); // convert from single band grayscale to three bands grayscale - OpenCV 4
+    cv::cvtColor(ref, ref_show, CV_GRAY2BGR);   // convert from single band grayscale to three bands grayscale
+    cv::cvtColor(curr, curr_show, CV_GRAY2BGR); // convert from single band grayscale to three bands grayscale
 
     cv::circle(ref_show, cv::Point2f(px_ref(0, 0), px_ref(1, 0)), 5, cv::Scalar(0, 0, 250), 2);
     cv::circle(curr_show, cv::Point2f(px_curr(0, 0), px_curr(1, 0)), 5, cv::Scalar(0, 0, 250), 2);
@@ -506,10 +504,8 @@ void showEpipolarLine(const Mat &ref, const Mat &curr, const Vector2d &px_ref, c
                       const Vector2d &px_max_curr) {
     
     Mat ref_show, curr_show;
-    // cv::cvtColor(ref, ref_show, CV_GRAY2BGR);   // covert from single-band grayscale to three-bands grayscale - OpenCV 3
-    // cv::cvtColor(curr, curr_show, CV_GRAY2BGR); // covert from single-band grayscale to three-bands grayscale - OpenCV 3
-    cv::cvtColor(ref, ref_show, cv::COLOR_GRAY2BGR);   // covert from single-band grayscale to three-bands grayscale - OpenCV 4
-    cv::cvtColor(curr, curr_show, cv::COLOR_GRAY2BGR); // covert from single-band grayscale to three-bands grayscale - OpenCV 4
+    cv::cvtColor(ref, ref_show, CV_GRAY2BGR);   // covert from single-band grayscale to three-bands grayscale
+    cv::cvtColor(curr, curr_show, CV_GRAY2BGR); // covert from single-band grayscale to three-bands grayscale
 
     cv::circle(ref_show, cv::Point2f(px_ref(0, 0), px_ref(1, 0)), 5, cv::Scalar(0, 255, 0), 2);
     cv::circle(curr_show, cv::Point2f(px_min_curr(0, 0), px_min_curr(1, 0)), 5, cv::Scalar(0, 255, 0), 2);

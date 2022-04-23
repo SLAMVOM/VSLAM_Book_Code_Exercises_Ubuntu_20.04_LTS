@@ -14,10 +14,8 @@ int main(int argc, char **argv) {
     }
 
     // -- reading the image
-    // Mat img_1 = imread(argv[1], CV_LOAD_IMAGE_COLOR); // OpenCV 3
-    // Mat img_2 = imread(argv[2], CV_LOAD_IMAGE_COLOR); // OpenCV 3
-    Mat img_1 = imread(argv[1], cv::IMREAD_COLOR); // OpenCV 4
-    Mat img_2 = imread(argv[2], cv::IMREAD_COLOR); // OpenCV 4
+    Mat img_1 = imread(argv[1], CV_LOAD_IMAGE_COLOR);
+    Mat img_2 = imread(argv[2], CV_LOAD_IMAGE_COLOR);
     assert(img_1.data != nullptr && img_2.data != nullptr);
 
     // -- initialization of the feature extraction process

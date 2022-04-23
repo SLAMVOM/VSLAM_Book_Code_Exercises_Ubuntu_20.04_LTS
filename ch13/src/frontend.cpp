@@ -289,7 +289,7 @@ int Frontend::DetectFeatures() {
     cv::Mat mask(current_frame_->left_img_.size(), CV_8UC1, 255);
     for (auto &feat : current_frame_->features_left_) {
         cv::rectangle(mask, feat->position_.pt - cv::Point2f(10, 10),
-                     feat->position_.pt + cv::Point2f(10, 10), 0, cv::FILLED); // OpenCV 3: CV_FILLED; OpenCV 4: cv::FILLED
+                     feat->position_.pt + cv::Point2f(10, 10), 0, CV_FILLED);
     }
 
     std::vector<cv::KeyPoint> keypoints;

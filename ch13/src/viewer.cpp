@@ -77,8 +77,7 @@ void Viewer::ThreadLoop() {
 // label the feature keypoints on the left image as circles
 cv::Mat Viewer::PlotFrameImage() {
     cv::Mat img_out;
-    // cv::cvtColor(current_frame_->left_img_, img_out, CV_GRAY2BGR); // OpenCV 3
-    cv::cvtColor(current_frame_->left_img_, img_out, cv::COLOR_GRAY2BGR); // OpenCV 4
+    cv::cvtColor(current_frame_->left_img_, img_out, CV_GRAY2BGR);
     for (size_t i = 0; i < current_frame_->features_left_.size(); ++i) {
         if (current_frame_->features_left_[i]->map_point_.lock()) {
             auto feat = current_frame_->features_left_[i];
