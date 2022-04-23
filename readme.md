@@ -1,4 +1,4 @@
-# This repository contains code (with comments and notes) and some exercises for the [VSLAM book](https://github.com/gaoxiang12/slambook-en) (and code in [2nd Ed](https://github.com/gaoxiang12/slambook2) of Chinese Version) by Xiang Gao et. al.
+# This repository contains code (with comments and notes) and some exercises for the [VSLAM book](https://github.com/gaoxiang12/slambook-en) (code in [2nd Ed](https://github.com/gaoxiang12/slambook2) of Chinese Version) by Xiang Gao et. al.
 
 -------------------------
 
