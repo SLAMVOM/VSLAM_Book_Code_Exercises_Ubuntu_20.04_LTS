@@ -44,7 +44,7 @@ class CurveFittingEdge : public g2o::BaseUnaryEdge<1, double, CurveFittingVertex
         // compute the error of the fitted model
         virtual void computeError() override{
             const CurveFittingVertex *v = static_cast<const CurveFittingVertex *> (_vertices[0]);
-            const Eigen::Vector3d abc = v->estimate();
+            const Eigen::Vector3d abc = v->estimate(); // the estimate() method and _estimate member are in "g2o/core/base_vertex.h"
             _error(0, 0) = _measurement - std::exp(abc(0, 0) * _x * _x + abc(1, 0) * _x + abc(2, 0));
         }
 
@@ -53,7 +53,7 @@ class CurveFittingEdge : public g2o::BaseUnaryEdge<1, double, CurveFittingVertex
             const CurveFittingVertex *v = static_cast<const CurveFittingVertex *> (_vertices[0]);
             const Eigen::Vector3d abc = v->estimate();
             double y = exp(abc[0] * _x * _x + abc[1] * _x + abc[2]);
-            _jacobianOplusXi[0] = -_x * _x * y;
+            _jacobianOplusXi[0] = -_x * _x * y; // the _jacobianOplusXi member here is inherited from BaseBinaryEdge class
             _jacobianOplusXi[1] = -_x * y;
             _jacobianOplusXi[2] = -y;
         }
@@ -83,7 +83,7 @@ int main (int argc, char **argv){
 
     // construct graph optimization, first setting g2o
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<3, 1>> BlockSolverType; // the parameters have dim of 3, error is a scalar with dim 1
-    typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType; // using a linear solver 
+    typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType; // using a linear solver
 
     // choose an optimization method from one of Gauss-Newton, Levenberg-Marquardt, or DogLeg
     auto solver = new g2o::OptimizationAlgorithmGaussNewton(
@@ -94,16 +94,16 @@ int main (int argc, char **argv){
 
     // add vertex into the graph
     CurveFittingVertex *v = new CurveFittingVertex();
-    v->setEstimate(Eigen::Vector3d(ae, be, ce));
-    v->setId(0);
+    v->setEstimate(Eigen::Vector3d(ae, be, ce)); // the setEstimate() method can be found at: "g2o/core/base_vertex.h"
+    v->setId(0); // the _id member is under "g2o/core/parameter.h", and the setId() method is defined at "g2o/core/optimizable_graph.h"
     optimizer.addVertex(v);
 
     // add edges into the graph
     for (int i = 0; i < N; i++) {
-        CurveFittingEdge *edge = new CurveFittingEdge(x_data[i]);
+        CurveFittingEdge *edge = new CurveFittingEdge(x_data[i]); // Note: the new operator returns a unique pointer to the object
         edge->setId(i);
-        edge->setVertex(0, v); // set the connection to the vertex
-        edge->setMeasurement(y_data[i]); // edges are measurements
+        edge->setVertex(0, v); // set the connection to the vertex to be optimized, the setVertex() method is defined in "g2o/core/hyper_graph.h"
+        edge->setMeasurement(y_data[i]); // edges are measurements, the _measurement member is inherited from BaseEdge class defined in "g2o/core/base_edge.h"
         edge->setInformation(Eigen::Matrix<double, 1, 1>::Identity() * 1 / (w_sigma * w_sigma)); // set the information matrix as the inverse covariance
         optimizer.addEdge(edge);
     }
