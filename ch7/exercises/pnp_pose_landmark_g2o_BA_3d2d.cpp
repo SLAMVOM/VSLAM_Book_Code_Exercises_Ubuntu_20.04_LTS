@@ -49,7 +49,8 @@
 using namespace std;
 using namespace cv;
 
-#define OPTIMIZATION_MODE   2   // 0 - pose only; 1 - landmark only; 2 - both pose and landmark
+//////////////// Set the following flag to a different value to perform a different optimization task
+#define OPTIMIZATION_MODE   2   // 0 - pose only; 1 - landmarks only; 2 - both pose and landmarks
 
 // Searching for feature matches between image pair
 void find_feature_matches(
@@ -277,7 +278,7 @@ class EdgeProjection : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, VertexPose
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-        EdgeProjection(const Eigen::Vector3d &pos, const Eigen::Matrix3d &K) : _pos3d(pos), _K(K) {}
+        EdgeProjection(const Eigen::Matrix3d &K) : _K(K) {}
 
         // override the error computation function
         virtual void computeError() override {
@@ -322,7 +323,6 @@ class EdgeProjection : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, VertexPose
         virtual bool write(ostream &out) const override {return false;}
 
         private:
-            Eigen::Vector3d _pos3d;
             Eigen::Matrix3d _K;
 }; // EdgeProjection
 
@@ -356,12 +356,8 @@ void BAPoseLandmarkG2O (
     v_cam->setEstimate(pose); // the setEstimate() method can be found at: "g2o/core/base_vertex.h"
     v_cam->setId(0); // the _id member is under "g2o/core/parameter.h", and the setId() method is defined at "g2o/core/optimizable_graph.h"
 
-// #if OPTIMIZATION_MODE == 1 // when mode is 1, we only update landmarks
-//     v_cam->setFixed(true); // the setFixed() method is defined in "g2o/core/optimizable_graph.h"
-// #endif
-
-    if (OPTIMIZATION_MODE == 1) {
-        v_cam->setFixed(true);
+    if (OPTIMIZATION_MODE == 1) { // when mode is 1, we only update landmarks
+        v_cam->setFixed(true); // the setFixed() method is defined in "g2o/core/optimizable_graph.h"
     }
 
     optimizer.addVertex(v_cam); 
@@ -375,20 +371,13 @@ void BAPoseLandmarkG2O (
         v_pt->setId(i+vertex_poses.size()); // the Id values follows the last one from camera pose
         v_pt->setEstimate(Eigen::Vector3d(point[0], point[1], point[2]));
 
-// #if OPTIMIZATION_MODE == 0 // when mode is 0, we only update poses
-//         v_pt->setFixed(true); 
-// #elif OPTIMIZATION_MODE == 2 // when mode is 2, we will marginalize the landmarks: the non-mariginalized vertices are processed, then the marginalized ones
-//         // g2o in BA needs to manually set vertices to be marginalized
-//         v_pt->setMarginalized(true);
-// #endif
-
-        if (OPTIMIZATION_MODE == 0) {
+        if (OPTIMIZATION_MODE == 0) { // when mode is 0, we only update poses
             v_pt->setFixed(true); 
         } else { // for OPTIMIZATION_MODE of 1 and 2
-            if (OPTIMIZATION_MODE == 2) {
-                v_pt->setMarginalized(true);
+            if (OPTIMIZATION_MODE == 2) { // when mode is 2, we will marginalize the landmarks: the non-mariginalized vertices are processed, then the marginalized ones
+                v_pt->setMarginalized(true); // BA in g2o needs to manually set vertices to be marginalized
             }
-            // To avoid an ill-posed problem, set half of the landmarks to be fixed
+            // To avoid an ill-posed problem, set half of the landmarks to be fixed, i.e., only optimize half of the landmarks
             if (i % 2 == 1) {
                 v_pt->setFixed(true); 
             }
@@ -410,13 +399,13 @@ void BAPoseLandmarkG2O (
     for (int i = 0; i < points1_3d.size(); i++) {
         auto p2d = points2_2d[i];
         auto p3d = points1_3d_ba[i];
-        EdgeProjection *edge = new EdgeProjection(p3d, K_eigen);
+        EdgeProjection *edge = new EdgeProjection(K_eigen);
         edge->setId(index);
         edge->setVertex(0, vertex_poses[0]); // in this problem, we have only one camera pose to consider
         edge->setVertex(1, vertex_points[i]);
         edge->setMeasurement(p2d);
         edge->setInformation(Eigen::Matrix2d::Identity());
-        edge->setRobustKernel(new g2o::RobustKernelHuber()); // using a robust kernel
+        // edge->setRobustKernel(new g2o::RobustKernelHuber()); // using a robust kernel, can comment this line to not use
         optimizer.addEdge(edge);
         index++;
     }
@@ -430,15 +419,8 @@ void BAPoseLandmarkG2O (
     cout << "optimization time used: " << time_used.count() << " seconds." << endl;
     cout << "pose estimated by g2o =\n" << vertex_poses[0]->estimate().matrix() << endl;
     pose = vertex_poses[0]->estimate(); // update the pose estimate
-
-// #if OPTIMIZATION_MODE != 0
-//     // update the landmarks estimates if the landmarks were optimized
-//     for (int i = 0; points1_3d.size(); i++) {
-//         auto pt_ver = vertex_points[i];
-//         for (int k = 0; k < 3; k++) {points1_3d_ba[i][k] = pt_ver->estimate()[k];}
-//     }
-// #endif
-
+    
+    // update the landmark estimates if the landmarks were optimized
     if (OPTIMIZATION_MODE != 0) {
         for (int i = 0; i < points1_3d.size(); i++) {
             if (i % 2 == 0) { // only half the landmarks are optimized to avoid an ill-posed problem setup
@@ -459,7 +441,7 @@ void BAPoseLandmarkG2O (
                (points1_3d[j][1]-points1_3d_ba[j][1]) * (points1_3d[j][1]-points1_3d_ba[j][1]) + 
                (points1_3d[j][2]-points1_3d_ba[j][2]) * (points1_3d[j][2]-points1_3d_ba[j][2]);
     }
-    cout << "squared error: " << err << endl;
+    cout << "\nSquared difference between all the initial and optimized landmark coordinates: " << err << '\n' << endl;
 }
 
 
