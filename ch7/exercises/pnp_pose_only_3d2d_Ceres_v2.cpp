@@ -166,11 +166,11 @@ Point2d pixel2cam(const Point2d &p, const Mat &K) {
 }
 
 // a struct defining the residual terms
-// In this question, it is assumed that the 
+// In this question, it is assumed that the
 // camera intrisics are given, thus fixed
 struct ReprojectionError {
 public:
-    ReprojectionError(Eigen::Vector2d p2d, 
+    ReprojectionError(Eigen::Vector2d p2d,
                       cv::Mat K,
                       Eigen::Vector3d p3d)
         : _pt2d(p2d),
@@ -180,16 +180,16 @@ public:
     // a template for operator
     template<typename T>
     bool operator()(const T *const camera, T *residuals) const {
-        
-        T predictions[2]; // reprojected pixel coordinates on the current image frame        
-        
+
+        T predictions[2]; // reprojected pixel coordinates on the current image frame
+
         T p_cur[3]; // point coordinates under the current camera frame
 
         T p_ref[3]; // point coordinates under the reference camera frame
         p_ref[0] = T(_pt3d[0]);
         p_ref[1] = T(_pt3d[1]);
         p_ref[2] = T(_pt3d[2]);
-        
+
         // camera[0,1,2] are the angle-axis rotation
         // Rodrigues' formula
         AngleAxisRotatePoint(camera, p_ref, p_cur); // passing in camera, only the first three elements are used
@@ -197,28 +197,28 @@ public:
         p_cur[0] += camera[3];
         p_cur[1] += camera[4];
         p_cur[2] += camera[5];
-        
+
         predictions[0] = p_cur[0] / p_cur[2] * T(_K.at<double>(0,0)) + T(_K.at<double>(0,2)); // pixel coordinate x
         predictions[1] = p_cur[1] / p_cur[2] * T(_K.at<double>(1,1)) + T(_K.at<double>(1,2)); // pixel coordinate y
-        
+
         residuals[0] = predictions[0] - T(_pt2d[0]);
         residuals[1] = predictions[1] - T(_pt2d[1]);
-        
+
         return true;
     }
 
-    static ceres::CostFunction *Create(const Eigen::Vector2d p2d, 
+    static ceres::CostFunction *Create(const Eigen::Vector2d p2d,
                                        const cv::Mat K,
                                        const Eigen::Vector3d p3d) {
         return (new ceres::AutoDiffCostFunction<ReprojectionError, 2, 6>( // 2D error; 6D pose
             new ReprojectionError(p2d, K, p3d)));
     }
-    
+
     private:
         Eigen::Vector2d _pt2d;
         Eigen::Vector3d _pt3d;
         cv::Mat _K;
-        
+
 }; // ReprojectionError
 
 // BA by Ceres
@@ -227,11 +227,11 @@ void bundleAdjustmentCeres(
     const VecVector2d &points_2d,
     const Mat &K,
     Sophus::SE3d &pose) {
-    
+
     // convert Sophus::SE3 to Eigen, then store parameters in a correct order
     Vector6d pose_vec = pose.log(); // Note: in Sophus, translation at front, rotation at the back
     double camera[6] = {pose_vec[3], pose_vec[4], pose_vec[5], pose_vec[0], pose_vec[1], pose_vec[2]};
-    
+
     // create a Ceres problem
     ceres::Problem problem;
     for (size_t i = 0; i < points_3d.size(); i++) {
@@ -239,16 +239,16 @@ void bundleAdjustmentCeres(
 
         // Each Residual block takes 2D point's x & y, intrinsics and camera poses as input
         // and outputs a 2-dimensional Residual
-        cost_function = ReprojectionError::Create(points_2d[i], 
+        cost_function = ReprojectionError::Create(points_2d[i],
                                                   K,
                                                   points_3d[i]);
 
         // // If enabled use Huber's robust loss function
-        ceres::LossFunction *loss_function = new ceres::HuberLoss(1.0);
+        // ceres::LossFunction *loss_function = new ceres::HuberLoss(1.0);
 
         // Adding residual block to ceres problem
-        problem.AddResidualBlock(cost_function, loss_function, camera); // with robust function
-        // problem.AddResidualBlock(cost_function, nullptr, camera); // without robust function
+        // problem.AddResidualBlock(cost_function, loss_function, camera); // with robust function
+        problem.AddResidualBlock(cost_function, nullptr, camera); // without robust function
     }
 
     // setup the ceres solver

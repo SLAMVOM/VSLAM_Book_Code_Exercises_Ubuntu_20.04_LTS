@@ -1,18 +1,8 @@
 /******************************************************************************
 * This script includes solving the PnP BA problem, 
-* including landmark optimization by using using the g2o package
+* only landmark optimization by using using the g2o package
 * to formula the problem as a graph optimization
 ******************************************************************************/
-
-/******************************************************************************
-* Note that: each landmark has 3 coordinates, and camera poses have 6 DOF.
-* However, each landmark can only provide 2 constraints, resulting in
-* underdetermining system if we want to optimize all landmark locations
-* with only one image. This can result in convergence issue when using GN.
-* So, in this script, we only optimize the x and y coordinates of landmarks,
-* and we also keep the last three landmarks unchanged during the optimization.
-******************************************************************************/
-
 
 #include <iostream>
 #include <iomanip>

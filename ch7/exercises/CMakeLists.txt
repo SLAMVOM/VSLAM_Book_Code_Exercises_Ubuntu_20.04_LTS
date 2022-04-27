@@ -52,8 +52,8 @@ target_link_libraries(pnpPoseCeresV2proj ${OpenCV_LIBS} ${CERES_LIBRARIES} Sophu
 add_executable( pnpPoseLandmarkCeres pnp_pose_landmark_3d2d_Ceres.cpp )
 target_link_libraries(pnpPoseLandmarkCeres ${OpenCV_LIBS} ${CERES_LIBRARIES} Sophus::Sophus)
 
-#add_executable( pnpLandmarkG2OBA  pnp_landmark_g2o_BA_3d2d.cpp)
-#target_link_libraries(pnpLandmarkG2OBA ${OpenCV_LIBS} Sophus::Sophus ${G2O_LIBS} g2o_core g2o_stuff)
+add_executable( pnpPoseLandmarkG2OBA  pnp_pose_landmark_g2o_BA_3d2d.cpp)
+target_link_libraries(pnpPoseLandmarkG2OBA ${OpenCV_LIBS} Sophus::Sophus ${G2O_LIBS} g2o_core g2o_stuff)
 
 add_executable( icpPoseICPGNTDB icp_pose_TDB_GN_3d3d.cpp )
 target_link_libraries(icpPoseICPGNTDB ${OpenCV_LIBS} Sophus::Sophus)
@@ -66,4 +66,3 @@ target_link_libraries(icpPoseCeres ${OpenCV_LIBS} Sophus::Sophus ${CERES_LIBRARI
 
 add_executable( icpPoseLandmarkCeres icp_pose_landmark_3d3d_Ceres.cpp )
 target_link_libraries(icpPoseLandmarkCeres ${OpenCV_LIBS} Sophus::Sophus ${CERES_LIBRARIES})
-

@@ -115,7 +115,7 @@ int main(int argc, char **argv) {
         pts_2d_eigen.push_back(Eigen::Vector2d(pts_2d[i].x, pts_2d[i].y));
     }
 
-    // Gauss-Newton 
+    // Gauss-Newton
     cout << "Calling bundle adjustment by Gauss Newton" << endl;
     Sophus::SE3d pose_gn;
     t1 = chrono::steady_clock::now();
@@ -265,8 +265,8 @@ void bundleAdjustmentGaussNewton(
 class VertexPose : public g2o::BaseVertex<6, Sophus::SE3d> {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-        
-        virtual void setToOriginImpl() override {
+
+        virtual void setToOriginImpl() override { // set the initial guess of the pose
             _estimate = Sophus::SE3d();
         }
 
@@ -292,7 +292,8 @@ class EdgeProjection : public g2o::BaseUnaryEdge<2, Eigen::Vector2d, VertexPose>
         Sophus::SE3d T = v->estimate();
         Eigen::Vector3d pos_pixel = _K * (T * _pos3d); // pixel coordinates [3 x 1]
         pos_pixel /= pos_pixel[2]; // normalize the coordinates by dividing the third dimension
-        _error = _measurement - pos_pixel.head<2>();
+        // Note: the reprojection error is defined as measured - estimated
+        _error = _measurement - pos_pixel.head<2>(); // the _error protected attribute is defined under g2o::BaseEdge in "g2o/core/base_edge.h"
     }
 
     virtual void linearizeOplus() override {
@@ -308,8 +309,8 @@ class EdgeProjection : public g2o::BaseUnaryEdge<2, Eigen::Vector2d, VertexPose>
         double Z = pos_cam[2];
         double Z2 = Z * Z;
         _jacobianOplusXi // define the jacobian matrix explicitly
-            << -fx/Z, 0, fx*X/Z2, fx*X*Y/Z2, -fx-fx*X*X/Z2, fx*Y/Z,
-            0, -fy/Z, fy*Y/Z2, fy+fy*Y*Y/Z2, -fy*X*Y/Z2, -fy*X/Z;
+            << -fx/Z,     0, fx*X/Z2,    fx*X*Y/Z2, -fx-fx*X*X/Z2,    fx*Y/Z,
+                   0, -fy/Z, fy*Y/Z2, fy+fy*Y*Y/Z2,    -fy*X*Y/Z2,   -fy*X/Z;
     }
 
     virtual bool read(istream &in) override {}
@@ -326,7 +327,7 @@ void bundleAdjustmentG2O(
     const VecVector2d &points_2d,
     const Mat &K,
     Sophus::SE3d &pose) {
-    
+
     // construct graph optimization, first setup g2o
     typedef g2o::BlockSolver<g2o::BlockSolverTraits<6, 3>> BlockSolverType; // pose is 6d, landmarks are 3d
     typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType; // linear solver type
