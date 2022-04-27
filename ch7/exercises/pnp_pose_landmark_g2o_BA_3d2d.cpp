@@ -144,7 +144,7 @@ int main(int argc, char **argv) {
         pts1_2d_eigen.push_back(Eigen::Vector2d(pts1_2d[i].x, pts1_2d[i].y));
         pts2_2d_eigen.push_back(Eigen::Vector2d(pts2_2d[i].x, pts2_2d[i].y));
     }
-    
+
     // a deep copy of pts_3d_eigen for bundle adjustment that also updates landmarks
     VecVector3d pts1_3d_ba = pts1_3d_eigen;
 
@@ -283,7 +283,7 @@ class EdgeProjection : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, VertexPose
         // override the error computation function
         virtual void computeError() override {
             const VertexPose  *v0 = static_cast<VertexPose *>(_vertices[0]); // the _vertices attribute is inherited from g2o::HyperGraph::Edge defined in "g2o/core/hyper_graph.h"
-            const VertexPoint *v1 = static_cast<VertexPoint*>(_vertices[1]); 
+            const VertexPoint *v1 = static_cast<VertexPoint*>(_vertices[1]);
             Sophus::SE3d T = v0->estimate();
             Eigen::Vector3d pos_pixel = _K * (T * (v1->estimate())); // pixel coordinates [3 x 1]
             pos_pixel /= pos_pixel[2]; // converted the 3D landmark from camera frame coordinates to pixel coordinates
@@ -307,7 +307,7 @@ class EdgeProjection : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, VertexPose
             double Z2 = Z * Z;
             double inv_z = 1.0 / Z;
             double inv_z2 = inv_z * inv_z;
-    
+
             _jacobianOplusXi // define the jacobian matrix for pose explicitly - [2 x 6]
                 <<  -fx/Z,     0, fx*X/Z2,    fx*X*Y/Z2, -fx-fx*X*X/Z2,    fx*Y/Z,
                         0, -fy/Z, fy*Y/Z2, fy+fy*Y*Y/Z2,    -fy*X*Y/Z2,   -fy*X/Z;
@@ -352,7 +352,7 @@ void BAPoseLandmarkG2O (
     // 4. Construct the optimization graph by adding vertices and edges to the optimizer
     // 4.1 adding vertiices into the graph
     // In this case, we have only one camera pose to be optimized
-    VertexPose *v_cam = new VertexPose(); 
+    VertexPose *v_cam = new VertexPose();
     v_cam->setEstimate(pose); // the setEstimate() method can be found at: "g2o/core/base_vertex.h"
     v_cam->setId(0); // the _id member is under "g2o/core/parameter.h", and the setId() method is defined at "g2o/core/optimizable_graph.h"
 
@@ -360,7 +360,7 @@ void BAPoseLandmarkG2O (
         v_cam->setFixed(true); // the setFixed() method is defined in "g2o/core/optimizable_graph.h"
     }
 
-    optimizer.addVertex(v_cam); 
+    optimizer.addVertex(v_cam);
     vertex_poses.push_back(v_cam);
 
 
@@ -372,22 +372,22 @@ void BAPoseLandmarkG2O (
         v_pt->setEstimate(Eigen::Vector3d(point[0], point[1], point[2]));
 
         if (OPTIMIZATION_MODE == 0) { // when mode is 0, we only update poses
-            v_pt->setFixed(true); 
+            v_pt->setFixed(true);
         } else { // for OPTIMIZATION_MODE of 1 and 2
             if (OPTIMIZATION_MODE == 2) { // when mode is 2, we will marginalize the landmarks: the non-mariginalized vertices are processed, then the marginalized ones
                 v_pt->setMarginalized(true); // BA in g2o needs to manually set vertices to be marginalized
             }
             // To avoid an ill-posed problem, set half of the landmarks to be fixed, i.e., only optimize half of the landmarks
             if (i % 2 == 1) {
-                v_pt->setFixed(true); 
+                v_pt->setFixed(true);
             }
         }
 
         optimizer.addVertex(v_pt);
-        vertex_points.push_back(v_pt); 
+        vertex_points.push_back(v_pt);
     }
 
-    // define the camera intrinsics matrix, K 
+    // define the camera intrinsics matrix, K
     Eigen::Matrix3d K_eigen;
     K_eigen <<
             K.at<double>(0, 0), K.at<double>(0, 1), K.at<double>(0, 2),
@@ -410,6 +410,7 @@ void BAPoseLandmarkG2O (
         index++;
     }
 
+    // 5. Pefrom optimization and return results
     chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
     optimizer.setVerbose(true);
     optimizer.initializeOptimization();
@@ -419,7 +420,7 @@ void BAPoseLandmarkG2O (
     cout << "optimization time used: " << time_used.count() << " seconds." << endl;
     cout << "pose estimated by g2o =\n" << vertex_poses[0]->estimate().matrix() << endl;
     pose = vertex_poses[0]->estimate(); // update the pose estimate
-    
+
     // update the landmark estimates if the landmarks were optimized
     if (OPTIMIZATION_MODE != 0) {
         for (int i = 0; i < points1_3d.size(); i++) {
@@ -438,12 +439,8 @@ void BAPoseLandmarkG2O (
             cout << "[" << points1_3d[j].transpose() << "]\t[" << points1_3d_ba[j].transpose() << "]\n";
         }
         err += (points1_3d[j][0]-points1_3d_ba[j][0]) * (points1_3d[j][0]-points1_3d_ba[j][0]) +
-               (points1_3d[j][1]-points1_3d_ba[j][1]) * (points1_3d[j][1]-points1_3d_ba[j][1]) + 
+               (points1_3d[j][1]-points1_3d_ba[j][1]) * (points1_3d[j][1]-points1_3d_ba[j][1]) +
                (points1_3d[j][2]-points1_3d_ba[j][2]) * (points1_3d[j][2]-points1_3d_ba[j][2]);
     }
     cout << "\nSquared difference between all the initial and optimized landmark coordinates: " << err << '\n' << endl;
 }
-
-
-
-

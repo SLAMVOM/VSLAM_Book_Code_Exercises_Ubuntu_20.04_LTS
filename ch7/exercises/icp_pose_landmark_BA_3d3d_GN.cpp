@@ -139,7 +139,7 @@ int main(int argc, char **argv) {
         cout << "p1 = " << pts1[i] << endl;
         cout << "p2 = " << pts2[i] << endl;
         cout << "p1_ba[" << pts_3d_ba[i][0] << ", " << pts_3d_ba[i][1] << ", " << pts_3d_ba[i][2] << "]" << endl;
-        cout << "(R * p2 + t) =\n" << 
+        cout << "(R * p2 + t) =\n" <<
             R * (Mat_<double>(3,1) << pts2[i].x, pts2[i].y, pts2[i].z) + t << "\n\n" << // using this or below line
             (pose_gn.matrix() * pt_tmp).head(3)  // using this or above line
             << endl;
@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
         err_ceres += ( (pt_tmp[0] - pts_3d_ba[i][0])*(pt_tmp[0] - pts_3d_ba[i][0]) +
                        (pt_tmp[1] - pts_3d_ba[i][1])*(pt_tmp[1] - pts_3d_ba[i][1]) +
                        (pt_tmp[2] - pts_3d_ba[i][2])*(pt_tmp[2] - pts_3d_ba[i][2]));
-        
+
         Eigen::Vector3d cv_tmp;
         cv_tmp << pts2[i].x, pts2[i].y, pts2[i].z;
         cv_tmp = R_SVD * cv_tmp + t_SVD;
@@ -170,7 +170,7 @@ int main(int argc, char **argv) {
                     (cv_tmp[2] - pts1[i].z)*(cv_tmp[2] - pts1[i].z));
     }
 
-    cout << "SVD point error: " << err_cv << "\t" << "ceres BA point error: " << err_ceres << endl;
+    cout << "SVD point error: " << err_cv << "\t" << "Gauss-Newton BA point error: " << err_ceres << endl;
 
     return 0;
 }
@@ -193,7 +193,7 @@ void find_feature_matches(const Mat &img_1, const Mat &img_2,
     // -- Step 2: computing BRIEF descriptors based on the detected keypoints
     descriptor->compute(img_1, keypoints_1, descriptors_1);
     descriptor->compute(img_2, keypoints_2, descriptors_2);
-    
+
     // -- Step 3: matching the BRIEF descriptors between the two images using hamming distance
     vector<DMatch> match;
     matcher->match(descriptors_1, descriptors_2, match);
@@ -281,7 +281,7 @@ void bundleAdjustment_GN(const VecVector3d &pts1,
                          const VecVector3d &pts2,
                         //  Mat &R, Mat &t // either using rotation matrix and translation vector for transformation
                          Sophus::SE3d &pose, // or using Sophus for transformation
-                         VecVector3d &points_3d_ba) 
+                         VecVector3d &points_3d_ba)
                          {
     typedef Eigen::Matrix<double, 6, 1> Vector6d;
     const int iterations = 50; // maximum number of iterations
@@ -296,7 +296,7 @@ void bundleAdjustment_GN(const VecVector3d &pts1,
 
     // first layer for loop for iterations
     for (int iter = 0; iter < iterations; iter++) {
-        
+
         // define some variables for the least square terms
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H_all;
         Eigen::Matrix<double, Eigen::Dynamic, 1> b_all;
@@ -310,7 +310,7 @@ void bundleAdjustment_GN(const VecVector3d &pts1,
         // Extract the rotation matrix from the pose
         // Eigen::Matrix<double, 3, 3> R_tmp = pose.so3().matrix(); // wrong, becuase this is the Jac wrt the landmark in current frame
         Eigen::Matrix<double, 3, 3> R_tmp = Eigen::Matrix3d::Identity(); // the Jac wrt the world (reference) frame pt should be Identity
-        
+
         // define several variables to store the intermediate Jacobians
         std::vector<Eigen::Matrix<double, 3, 3>, Eigen::aligned_allocator<Eigen::Matrix<double, 3, 3>>> vec_jac_pts1; // Jacobian for landmarks
         std::vector<Eigen::Matrix<double, 3, 6>, Eigen::aligned_allocator<Eigen::Matrix<double, 3, 6>>> vec_jac_pose; // Jacobian for cam poses
@@ -319,10 +319,10 @@ void bundleAdjustment_GN(const VecVector3d &pts1,
         cost = 0.0;
         // second layer for loop to compute cost accumulated through each individual landmark
         for (int i = 0; i < pts1.size(); i++) {
-            
+
             Eigen::Vector3d p_trans = pose * pts2[i]; // compute the landmark coor under the second frame
             Eigen::Vector3d e = points_3d_ba[i] - p_trans; // compute the error for each landmark
-            
+
             cost += e.squaredNorm(); // accumulate the error
 
             J << -1,  0,  0,           0, -p_trans[2],  p_trans[1], // first row
@@ -334,9 +334,9 @@ void bundleAdjustment_GN(const VecVector3d &pts1,
             } else {
                 if (i == 0) {
                     J_all.conservativeResize(J_all.rows(), J_all.cols()+3); // [3 x 9] to include jacobian for landmark
-    
+
                     b_all = -J_all.transpose() * e; // [(6+3)x1] = [9 x 1]
-                    
+
                 } else {
                     // extend the J_all matrix to include the current Jacobian, J
                     J_all.conservativeResize(J_all.rows()+3, J_all.cols()+3); // [3n x (6+3(n-omit_num+1))]
@@ -378,7 +378,7 @@ void bundleAdjustment_GN(const VecVector3d &pts1,
 
         Eigen::VectorXd dx;
         dx = H_all.ldlt().solve(b_all); // [(6+3(n-omit_num+1)) x 1], the first 6 elements are for pose variables
-        
+
         if (isnan(dx[0])) {
             cout << "result is nan!" << endl;
             break;
@@ -411,4 +411,3 @@ void bundleAdjustment_GN(const VecVector3d &pts1,
         cout << "Pose by ICP-BA with GN: \n" << pose.matrix() << endl;
     }
 }
-

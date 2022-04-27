@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.0)
 
 project(exercises)
 
@@ -18,12 +18,19 @@ include_directories("/usr/include/eigen3")
 find_package(Ceres REQUIRED)
 include_directories(${CERES_INCLUDE_DIRS})
 
-# g2o
-# include_directories(${G2O_INCLUDE_DIRS})
-
 # Sophus
 find_package(Sophus REQUIRED)
 include_directories(${Sophus_INCLUDE_DIRS})
+
+# CSparse
+find_package(CSparse REQUIRED)
+include_directories(${CSPARSE_INCLUDE_DIR})
+
+# g2o
+find_package(G2O REQUIRED)
+include_directories(${G2O_INCLUDE_DIRS})
+
+# -------------------------------------------------------------------
 
 add_executable( featuresCV features_cv.cpp )
 target_link_libraries(featuresCV ${OpenCV_LIBS})
@@ -66,3 +73,6 @@ target_link_libraries(icpPoseCeres ${OpenCV_LIBS} Sophus::Sophus ${CERES_LIBRARI
 
 add_executable( icpPoseLandmarkCeres icp_pose_landmark_3d3d_Ceres.cpp )
 target_link_libraries(icpPoseLandmarkCeres ${OpenCV_LIBS} Sophus::Sophus ${CERES_LIBRARIES})
+
+add_executable( icpPoseLandmarkG2OBA  icp_pose_landmark_3d3d_g2o.cpp)
+target_link_libraries(icpPoseLandmarkG2OBA ${OpenCV_LIBS} Sophus::Sophus ${G2O_LIBS} g2o_core g2o_stuff g2o_csparse_extension cxsparse)
