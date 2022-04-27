@@ -4,6 +4,22 @@
 * formulates the problem as a graph optimization.
 ******************************************************************************/
 
+/********************************************************************
+ * Note that in a two-view PnP setting, if we set one of the frames
+ * as an inertia (or world) reference frame, while (assuming) all the
+ * landmarks are observed by the two cameras. In such case, if we
+ * try to optimize the 6D pose and all the landmarks coordinates in
+ * the reference frame together. The problem will be ill-posed,
+ * because each observation can only give two constraints/conditions.
+ * At the same time we have 3N variables for all the landmarks plus
+ * 6 variables for the camera pose of the moving frame.
+ * Therefore, we have (3N + 6) variables but have only 2N conditions.
+ * There are less conditions than unknowns, thus the problem is
+ * ill-posed. We can fix (more than) N/3+2 landmarks and only update
+ * the pose and the other landmarks to make the system to give an
+ * either unique or overdetermined solution.
+********************************************************************/
+
 // Author: MT
 // Creation Date: 2022-April-26
 // Previous Edit: 2022-April-27
@@ -33,7 +49,7 @@
 using namespace std;
 using namespace cv;
 
-#define OPTIMIZATION_MODE   0   // 0 - pose only; 1 - landmark only; 2 - both pose and landmark
+#define OPTIMIZATION_MODE   2   // 0 - pose only; 1 - landmark only; 2 - both pose and landmark
 
 // Searching for feature matches between image pair
 void find_feature_matches(
@@ -133,8 +149,8 @@ int main(int argc, char **argv) {
 
     // G2O Graph optimization
     std::cout << "Calling bundle adjustment by g2o" << std::endl;
-    Sophus::SE3d pose_g2o; // using an identity matrix as initial guess
-    // Eigen::Matrix3d R_eigen;
+    Sophus::SE3d pose_g2o; // using an identity matrix as initial guess, or comment this line to following block of code
+    // Eigen::Matrix3d R_eigen; ///////// uncomment the followng block of code, or use the line above of this block of code
     // R_eigen << R.at<double>(0,0), R.at<double>(0,1), R.at<double>(0,2),
     //            R.at<double>(1,0), R.at<double>(1,1), R.at<double>(1,2),
     //            R.at<double>(2,0), R.at<double>(2,1), R.at<double>(2,2);/////////
@@ -268,7 +284,7 @@ class EdgeProjection : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, VertexPose
             const VertexPose  *v0 = static_cast<VertexPose *>(_vertices[0]); // the _vertices attribute is inherited from g2o::HyperGraph::Edge defined in "g2o/core/hyper_graph.h"
             const VertexPoint *v1 = static_cast<VertexPoint*>(_vertices[1]); 
             Sophus::SE3d T = v0->estimate();
-            Eigen::Vector3d pos_pixel = _K * (T * _pos3d); // pixel coordinates [3 x 1]
+            Eigen::Vector3d pos_pixel = _K * (T * (v1->estimate())); // pixel coordinates [3 x 1]
             pos_pixel /= pos_pixel[2]; // converted the 3D landmark from camera frame coordinates to pixel coordinates
             // Note: the reprojection error is defined as measured - estimated
             _error = _measurement - pos_pixel.head<2>(); // the _error protected attribute is defined under g2o::BaseEdge in "g2o/core/base_edge.h"
@@ -276,9 +292,10 @@ class EdgeProjection : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, VertexPose
 
         // override the linearizaition funciton
         virtual void linearizeOplus() override {
-            const VertexPose *v = static_cast<VertexPose *>(_vertices[0]);
-            Sophus::SE3d T = v->estimate();
-            Eigen::Vector3d pos_cam = T * _pos3d; // transform the point to current frame
+            const VertexPose *v0 = static_cast<VertexPose *>(_vertices[0]);
+            const VertexPoint *v1 = static_cast<VertexPoint *>(_vertices[1]);
+            Sophus::SE3d T = v0->estimate();
+            Eigen::Vector3d pos_cam = T * (v1->estimate()); // transform the point to current frame
             double fx = _K(0, 0);
             double fy = _K(1, 1);
             double cx = _K(0, 2);
@@ -289,26 +306,14 @@ class EdgeProjection : public g2o::BaseBinaryEdge<2, Eigen::Vector2d, VertexPose
             double Z2 = Z * Z;
             double inv_z = 1.0 / Z;
             double inv_z2 = inv_z * inv_z;
-            
-            // Eigen::Matrix<double, 2, 6> J; // define the jacobian matrix for pose explicitly - [2 x 6]
-            // J << -fx/Z,     0, fx*X/Z2,    fx*X*Y/Z2, -fx-fx*X*X/Z2,    fx*Y/Z,
-            //          0, -fy/Z, fy*Y/Z2, fy+fy*Y*Y/Z2,    -fy*X*Y/Z2,   -fy*X/Z;
-            // _jacobianOplusXi = J; // [2 x 6]
-
-            // Eigen::Matrix<double, 2, 3> J_pts; // define the jacobian matrix for landmark explicitly
-            // J_pts <<    -fx * inv_z,           0, fx * X * inv_z2,
-            //                       0, -fy * inv_z, fy * Y * inv_z2;
-            // J_pts = J_pts;// * T.rotationMatrix(); // [2 x 3]
-            // _jacobianOplusXj = J_pts;
-
-
+    
             _jacobianOplusXi // define the jacobian matrix for pose explicitly - [2 x 6]
                 <<  -fx/Z,     0, fx*X/Z2,    fx*X*Y/Z2, -fx-fx*X*X/Z2,    fx*Y/Z,
                         0, -fy/Z, fy*Y/Z2, fy+fy*Y*Y/Z2,    -fy*X*Y/Z2,   -fy*X/Z;
-            // _jacobianOplusXj // define the jacobian matrix for landmark explicitly
-            //     << -fx * inv_z,           0, fx * X * inv_z2,
-            //                  0, -fy * inv_z, fy * Y * inv_z2;
-            // _jacobianOplusXj = _jacobianOplusXj;// * T.rotationMatrix(); // [2 x 3]
+            _jacobianOplusXj // define the jacobian matrix for landmark explicitly
+                << -fx * inv_z,           0, fx * X * inv_z2,
+                             0, -fy * inv_z, fy * Y * inv_z2;
+            _jacobianOplusXj = _jacobianOplusXj * T.rotationMatrix(); // [2 x 3]
 
         }
 
@@ -379,8 +384,14 @@ void BAPoseLandmarkG2O (
 
         if (OPTIMIZATION_MODE == 0) {
             v_pt->setFixed(true); 
-        } else if (OPTIMIZATION_MODE == 2 ) {
-            v_pt->setMarginalized(true);
+        } else { // for OPTIMIZATION_MODE of 1 and 2
+            if (OPTIMIZATION_MODE == 2) {
+                v_pt->setMarginalized(true);
+            }
+            // To avoid an ill-posed problem, set half of the landmarks to be fixed
+            if (i % 2 == 1) {
+                v_pt->setFixed(true); 
+            }
         }
 
         optimizer.addVertex(v_pt);
@@ -413,7 +424,7 @@ void BAPoseLandmarkG2O (
     chrono::steady_clock::time_point t1 = chrono::steady_clock::now();
     optimizer.setVerbose(true);
     optimizer.initializeOptimization();
-    optimizer.optimize(40);
+    optimizer.optimize(50);
     chrono::steady_clock::time_point t2 = chrono::steady_clock::now();
     chrono::duration<double> time_used = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
     cout << "optimization time used: " << time_used.count() << " seconds." << endl;
@@ -429,12 +440,26 @@ void BAPoseLandmarkG2O (
 // #endif
 
     if (OPTIMIZATION_MODE != 0) {
-        for (int i = 0; points1_3d.size(); i++) {
-            auto pt_ver = vertex_points[i];
-            for (int k = 0; k < 3; k++) {points1_3d_ba[i][k] = pt_ver->estimate()[k];}
+        for (int i = 0; i < points1_3d.size(); i++) {
+            if (i % 2 == 0) { // only half the landmarks are optimized to avoid an ill-posed problem setup
+                auto pt_ver = vertex_points[i];
+                for (int k = 0; k < 3; k++) {points1_3d_ba[i][k] = pt_ver->estimate()[k];}
+            }
         }
     }
 
+    // compare some landmarks before and after BA
+    cout << "point coor before (front) and after (latter) BA: \n" << endl;
+    double err = 0.0;
+    for (int j = 0; j < points1_3d.size(); j++) {
+        if (j < 6){
+            cout << "[" << points1_3d[j].transpose() << "]\t[" << points1_3d_ba[j].transpose() << "]\n";
+        }
+        err += (points1_3d[j][0]-points1_3d_ba[j][0]) * (points1_3d[j][0]-points1_3d_ba[j][0]) +
+               (points1_3d[j][1]-points1_3d_ba[j][1]) * (points1_3d[j][1]-points1_3d_ba[j][1]) + 
+               (points1_3d[j][2]-points1_3d_ba[j][2]) * (points1_3d[j][2]-points1_3d_ba[j][2]);
+    }
+    cout << "squared error: " << err << endl;
 }
 
 

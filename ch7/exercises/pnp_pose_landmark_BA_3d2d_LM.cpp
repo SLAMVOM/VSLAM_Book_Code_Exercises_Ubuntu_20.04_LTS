@@ -1,9 +1,9 @@
 /*************************************************************************
-* This script includes solving the PnP BA problem, 
-* including landmark optimization by explictly implementing using 
+* This script includes solving the PnP BA problem,
+* including landmark optimization by explictly implementing using
 * Levenberg-Marquardt. Note: there are various versions of LM algorithms.
 * The one implemented here is just one of the many workable versions.
-Reference: 
+Reference:
 Gavin (2020) "The Levenberg-Marquardt algorithm for nonlinear least squares curve-fitting problems"
 *************************************************************************/
 
@@ -229,7 +229,7 @@ void bundleAdjustmentLM(
         Eigen::Matrix<double, 2, 6> J = Eigen::Matrix<double, 2, 6>::Zero(); // Jacobian matrix for the pose variables
 
         Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> H_all; // H_all = J^T * J, [(6+3(n-omit_num+1)) x (6+3(n-omit_num+1))]
-        
+
         Eigen::Matrix<double, Eigen::Dynamic, 1> b_all; // initialize the RHS of Gauss-Newton [(6+3(n-omit_num+1)) x 1]: -J * e
         Eigen::Matrix<double, 6, 1> b = Eigen::Matrix<double, 6, 1>::Zero() ; // the RHS term in Gauss-Newton that associated with the pose variables
 
@@ -256,7 +256,7 @@ void bundleAdjustmentLM(
             cost += e.squaredNorm(); // the overall cost is the sum of reprojection errors of all landmarks
             Eigen::Matrix<double, 2, 6> J; // the jacobian of e wrt the pose variables
             Eigen::Matrix<double, 2, 3> J_pts; // the jacobian of e wrt the landmark coordinates
-            
+
             // compute the jacobian of e wrt the pose variables
             J <<-fx * inv_z,
                 0,
@@ -273,8 +273,8 @@ void bundleAdjustmentLM(
 
             if (i > (int)points_3d.size()-omit_num) { // omit the last (omit_num-1) landmarks, Note: .size() returns an unsigned int
                 J_all.conservativeResize(J_all.rows()+2, J_all.cols()); // [2n x (6+2(n-omit_num+1))]
-            } else { // for the first (N - omit_num +1) landmarks 
-                
+            } else { // for the first (N - omit_num +1) landmarks
+
                 // compute the jacobian of e wrt the current landmark coordinates
                 J_pts <<-fx * inv_z,
                         0,
@@ -283,7 +283,7 @@ void bundleAdjustmentLM(
                         -fy * inv_z,
                         fy * pc[1] * inv_z2; // [2 x 3]
                 J_pts = J_pts * pose.rotationMatrix(); // [2 x 3]
-                
+
                 if (i == 0) { // the first landmark to be optimized
                     J_all.conservativeResize(J_all.rows(), J_all.cols()+3); // [2 x 9] to include jacobian for landmark
                     b_all = -J_all.transpose() * e; // [(6+3)x1] = [9 x 1]
@@ -312,7 +312,7 @@ void bundleAdjustmentLM(
         b_all.block<6,1>(0,0) = b; // b for pose
 
         for (int i = 0; i < points_3d.size(); i++) {
-            if (i <= (int)points_3d.size()-omit_num) { // for the first (N - omit_num +1) landmarks 
+            if (i <= (int)points_3d.size()-omit_num) { // for the first (N - omit_num +1) landmarks
                 J_all.block<2,6>(i*2, 0) = vec_jac_pose[i];
                 J_all.block<2,3>(i*2, 6+3*i) = vec_jac_pts[i];
                 b_all.block<3,1>(6+3*i, 0) = vec_b_pts[i];
@@ -380,13 +380,6 @@ void bundleAdjustmentLM(
         // pose = Sophus::SE3d::exp(dx.head(6)) * pose; // here is a matrix exponential
         lastCost = cost;
         cout << "Iteration " << iter << " cost = " << std::setprecision(12) << cost << endl;
-
-        // // update the landmarks using a for loop
-        // for (int j = 0; j <= (int)points_3d.size()-omit_num; j++) {
-        //     points_3d_ba[j][0] += dx[6+3*j];
-        //     points_3d_ba[j][1] += dx[7+3*j];
-        //     points_3d_ba[j][2] += dx[8+3*j];
-        // }
 
         if (dx.norm() < 1e-6) {
             // if the norm of update for variables is smaller than 1e-6 -> convergence
