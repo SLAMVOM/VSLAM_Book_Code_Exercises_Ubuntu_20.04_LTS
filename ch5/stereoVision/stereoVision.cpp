@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
             point[1] = y * depth;
             point[2] = depth;
 
-            pointcloud.push_back(point); // record the point position in the normalized image plane coor. system
+            pointcloud.push_back(point); // record the point position in the camera frame coor. system
         }
     }
 
@@ -74,8 +74,8 @@ void showPointCloud(const vector<Vector4d, Eigen::aligned_allocator<Vector4d>> &
 
     pangolin::OpenGlRenderState s_cam(
         pangolin::ProjectionMatrix(1024, 768, 500, 500, 512, 389, 0.1, 1000),
-        pangolin::ModelViewLookAt(0.2, -0.5, -1.8, 0, 0, 0, 0.0, -1.0, 0.0) 
-    ); 
+        pangolin::ModelViewLookAt(0.2, -0.5, -1.8, 0, 0, 0, 0.0, -1.0, 0.0)
+    );
     // ModelViewLookAt: from (x1,y1,z1) to look at the origin (x2,y2,z2), (x3,y3,z3) indicates the up direction
     // the inherent axes: z into page, y to up, x to left
 

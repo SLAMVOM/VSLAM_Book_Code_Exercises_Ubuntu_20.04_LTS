@@ -1,6 +1,6 @@
 /**************************************************************************************
 This is a exercise to use the G2O package to perform a curve fitting task
-using the same function model and input data from the Ceres curve fitting example from: 
+using the same function model and input data from the Ceres curve fitting example from:
 https://ceres-solver.googlesource.com/ceres-solver/+/master/examples/curve_fitting.cc
 
 Author: MT
@@ -123,7 +123,7 @@ class CurveFittingVertex : public g2o::BaseVertex<2, Eigen::Vector2d> {
     public:
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-        // override the reset function
+        // override the reset function, the setToOriginImpl() method defined in "g2o/core/optimizable_graph.h"
         virtual void setToOriginImpl() override {
             _estimate << 0, 0; // same initial guess as in the ceres example
         }
@@ -162,7 +162,7 @@ class CurveFittingEdge : public g2o::BaseUnaryEdge<1, double, CurveFittingVertex
 
         // Compute the Jacobian matrix
         virtual void linearizeOplus() override {
-            const CurveFittingVertex *v = static_cast<const CurveFittingVertex *> (_vertices[0]);
+            const CurveFittingVertex *v = static_cast<const CurveFittingVertex *> (_vertices[0]); // the _vertices attribute is inherited from g2o::HyperGraph::Edge defined in "g2o/core/hyper_graph.h"
             const Eigen::Vector2d m_c = v->estimate();
             double y_est = std::exp(m_c[0] * _x + m_c[1]);
             _jacobianOplusXi[0] = -_x * y_est; // de/dm_c[0] = (de/dy_est) * (dy_est/dm_c[0])
@@ -187,7 +187,7 @@ int main (int argc, char **argv) {
     typedef g2o::LinearSolverDense<BlockSolverType::PoseMatrixType> LinearSolverType; // using a linear solver
 
     // using the Levenberg-Marquadt method (or Gauss-Newton)
-    
+
     // g2o::OptimizationAlgorithmLevenberg* solver = new g2o::OptimizationAlgorithmLevenberg(
     // g2o::OptimizationAlgorithmGaussNewton* solver = new g2o::OptimizationAlgorithmGaussNewton(
     auto solver = new g2o::OptimizationAlgorithmLevenberg( // g2o::OptimizationAlgorithmGaussNewton
@@ -200,7 +200,7 @@ int main (int argc, char **argv) {
     // 4.1 adding vertex into the graph, in this case, only one parameter block
     CurveFittingVertex *v = new CurveFittingVertex();
     v->setEstimate(Eigen::Vector2d(me, ce)); // the setEstimate() method can be found at: "g2o/core/base_vertex.h"
-    v->setId(0); // // the _id member is under "g2o/core/parameter.h", and the setId() method is defined at "g2o/core/optimizable_graph.h"
+    v->setId(0); // the _id member is under "g2o/core/parameter.h", and the setId() method is defined at "g2o/core/optimizable_graph.h"
     optimizer.addVertex(v);
 
     // 4.2 adding edges into the graph
