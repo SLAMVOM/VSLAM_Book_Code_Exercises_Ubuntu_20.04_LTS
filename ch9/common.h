@@ -38,7 +38,7 @@ public:
     int num_parameters() const { return num_parameters_; }
 
     const int *point_index() const { return point_index_; }
-    
+
     const int *camera_index() const { return camera_index_; }
 
     const double *observations() const { return observations_; }
@@ -74,7 +74,7 @@ private:
     void CameraToAngleAxisAndCenter(const double *camera,
                                     double *angle_axis,
                                     double *center) const;
-    
+
     void AngleAxisAndCenterToCamera(const double *angle_axis,
                                     const double *center,
                                     double *camera) const;
@@ -91,4 +91,3 @@ private:
     double *observations_;
     double *parameters_;
 };
-

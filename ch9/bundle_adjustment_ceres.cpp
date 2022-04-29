@@ -46,7 +46,7 @@ void SolveBA(BALProblem &bal_problem) {
         ceres::LossFunction *loss_function = new ceres::HuberLoss(1.0);
 
         // Each observation corresponds to a pair of one camera and one point
-        // which are identified y camera_index()[i] and point_index()[i]
+        // which are identified as camera_index()[i] and point_index()[i]
         // respectively.
         double *camera = cameras + camera_block_size * bal_problem.camera_index()[i];
         double *point = points + point_block_size * bal_problem.point_index()[i];

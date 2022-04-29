@@ -46,7 +46,7 @@ struct PoseAndIntrinsics {
 class VertexPoseAndIntrinsics : public g2o::BaseVertex<9, PoseAndIntrinsics> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
-    
+
     VertexPoseAndIntrinsics() {}
 
     virtual void setToOriginImpl() override {
@@ -95,7 +95,7 @@ public:
     virtual bool write(ostream &out) const {}
 };
 
-class EdgeProjection : 
+class EdgeProjection :
     public g2o::BaseBinaryEdge<2, Vector2d, VertexPoseAndIntrinsics, VertexPoint> {
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW;
@@ -170,7 +170,7 @@ void SolveBA(BALProblem &bal_problem) {
         // g2o in BA needs to manually set vertices to be marginalized
         v->setMarginalized(true);
         optimizer.addVertex(v);
-        vertex_points.push_back(v); 
+        vertex_points.push_back(v);
     }
 
     // edge
@@ -185,7 +185,7 @@ void SolveBA(BALProblem &bal_problem) {
     }
 
     optimizer.initializeOptimization();
-    optimizer.optimize(40);
+    optimizer.optimize(50);
 
     // set to bal problem
     for (int i = 0; i < bal_problem.num_cameras(); ++i) {
