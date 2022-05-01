@@ -21,6 +21,8 @@ include_directories(${PROJECT_SOURCE_DIR} ${EIGEN3_INCLUDE_DIR} ${CSPARSE_INCLUD
 add_library(bal_common common.cpp)
 add_executable(BALCeresBA BAL_BA_ceres.cpp)
 add_executable(g2oFullCamModelBA BAL_BA_FullCamModel_g2o.cpp)
+add_executable(ceresFullCamModelBA BAL_BA_FullCamModel_ceres.cpp)
 
 target_link_libraries(BALCeresBA ${CERES_LIBRARIES} bal_common)
 target_link_libraries(g2oFullCamModelBA Sophus::Sophus ${G2O_LIBS} bal_common)
+target_link_libraries(ceresFullCamModelBA ${CERES_LIBRARIES} bal_common)

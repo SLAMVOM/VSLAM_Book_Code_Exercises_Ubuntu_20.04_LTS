@@ -5,9 +5,11 @@
 *
 * Reference: Section 9.4 in VSLAM book 2nd ed.
 *
+* The solver used in this problem is g2o.
+*
 * Created by: MT
 * Creation Date: 2022-April-28
-* Previous Edit: 2022-April-28
+* Previous Edit: 2022-May-01
 *****************************************************************/
 
 #include <g2o/core/base_vertex.h>
@@ -181,14 +183,14 @@ int main(int argc, char **argv) {
     // Note that, the data given by the BAL dataset file only contains information
     // about 6D camera poses, and camera intrinsics of f, k1, k2. However, in this
     // problem, we want to consider the 6D poses and fx, fy, p1, p2, k1, and k2.
-    // Therefore, we will assume fx = fy = f, and p1 = p2 = 0 at the beginning and 
+    // Therefore, we will assume fx = fy = f, and p1 = p2 = 0 at the beginning and
     // let the system to adjust their values during the optimization.
     BALProblem bal_problem(argv[1]);
     bal_problem.Normalize();
     bal_problem.Perturb(0.1, 0.5, 0.5);
     bal_problem.WriteToPLYFile("initial.ply");
     SolveBA(bal_problem);
-    bal_problem.WriteToPLYFile("final.ply");
+    bal_problem.WriteToPLYFile("g2ofinal.ply");
 
     return 0;
 }
@@ -217,14 +219,14 @@ void SolveBA(BALProblem &bal_problem) {
 
     // 4. Construct the optimization graph by adding vertices and edges to the optimizer
     // 4.1 adding vertiices into the graph
-    
+
     // build g2o problem
-    
+
     // Camera vertices
     // Note that, the data given by the BAL dataset file only contains information
     // about 6D camera poses, and camera intrinsics of f, k1, k2. However, in this
     // problem, we want to consider the 6D poses and fx, fy, p1, p2, k1, and k2.
-    // Therefore, we will assume fx = fy = f, and p1 = p2 = 0 at the beginning and 
+    // Therefore, we will assume fx = fy = f, and p1 = p2 = 0 at the beginning and
     // let the system to adjust their values during the optimization.
     // Initially from the data: 9D, sequentially: 3D axis-angle + 3D translation + 1D f     + 2D k1,k2
     // Each set of cam params: 12D, sequentially: 3D axis-angle + 3D translation + 2D fx,fy + 2D p1,p2 + 2D k1,k2
@@ -232,7 +234,7 @@ void SolveBA(BALProblem &bal_problem) {
     const double *observations = bal_problem.observations();
     for (int i = 0; i < bal_problem.num_cameras(); i++) {
         VertexPoseAndIntrinsics *v = new VertexPoseAndIntrinsics();
-        
+
         // Allocate the appropriate camera pose and intrinsics values
         double *camera_9d  = cameras + camera_block_size * i;
         double *camera_12d = camera_params_ext + 12 * i; // each extended parameter block has 12 D
@@ -248,6 +250,8 @@ void SolveBA(BALProblem &bal_problem) {
 
         v->setId(i);
         v->setEstimate(PoseAndIntrinsics(camera_12d));// the setEstimate() method can be found at: "g2o/core/base_vertex.h"
+        // g2o in BA needs to manually set vertices to be marginalized
+        // v->setMarginalized(true); // BA in g2o needs to manually set vertices to be marginalized
         optimizer.addVertex(v);
         vertex_cameras.push_back(v);
     }
@@ -258,7 +262,7 @@ void SolveBA(BALProblem &bal_problem) {
         double *point = points + point_block_size * i;
         v->setId(i + bal_problem.num_cameras()); // the Id values follows the last one from camera pose
         v->setEstimate(Vector3d(point[0], point[1], point[2]));
-        // g2o in BA needs to manually set vertices to be marginalized
+        // //g2o in BA needs to manually set vertices to be marginalized
         v->setMarginalized(true); // BA in g2o needs to manually set vertices to be marginalized
         optimizer.addVertex(v);
         vertex_points.push_back(v);
@@ -271,7 +275,7 @@ void SolveBA(BALProblem &bal_problem) {
         edge->setVertex(1, vertex_points[bal_problem.point_index()[i]]);
         edge->setMeasurement(Vector2d(observations[2 * i + 0], observations[2 * i + 1]));
         edge->setInformation(Matrix2d::Identity());
-        // edge->setRobustKernel(new g2o::RobustKernelHuber());
+        edge->setRobustKernel(new g2o::RobustKernelHuber());
         optimizer.addEdge(edge);
     }
 
