@@ -1,10 +1,9 @@
-
 /****************************************************************************
 * This program demonstrates how to use g2o solver for pose graph optimization
 * sphere.g2o is a synthetic pose graph.
 * Although the whole graph can be loaded by calling the `load` function,
 * we still implement the data loading to obtain a better understanding of the data.
-* This script uses the SE3 pose in g2o/types/slam3d/, 
+* This script uses the SE3 pose in g2o/types/slam3d/,
 * which represents the rotation using quaternion rather than Lie Algebra
 ****************************************************************************/
 
