@@ -114,7 +114,7 @@ inline float GetPixelValue(const cv::Mat &img, float x, float y) {
     float yy = y - floor(y);
     return float(
         (1 - xx) * (1 - yy) * data[0] +
-        xx * (1- yy) * data[1] + 
+        xx * (1- yy) * data[1] +
         (1 - xx) * yy * data[img.step] +
         xx * yy * data[img.step + 1]
     );
@@ -161,7 +161,7 @@ void DirectPoseEstimationSingleLayer(
     const VecVector2d &px_ref,
     const vector<double> depth_ref,
     Sophus::SE3d &T21) {
-    
+
     const int iterations = 10;
     double cost = 0, lastCost = 0;
     auto t1 = chrono::steady_clock::now();
@@ -233,7 +233,7 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range) {
     for (size_t i = range.start; i < range.end; i++) {
 
         // compute the projection in the second image
-        Eigen::Vector3d point_ref = 
+        Eigen::Vector3d point_ref =
             depth_ref[i] * Eigen::Vector3d((px_ref[i][0] - cx) / fx, (px_ref[i][1] - cy) / fy, 1);
         Eigen::Vector3d point_cur = T21 * point_ref;
         if (point_cur[2] < 0) // depth invalid
@@ -241,7 +241,7 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range) {
 
         float u = fx * point_cur[0] / point_cur[2] + cx, v = fy * point_cur[1] / point_cur[2] + cy;
         if (u < half_patch_size || u > img2.cols - half_patch_size || v < half_patch_size || v > img2.rows - half_patch_size)
-            continue; 
+            continue;
 
         projection[i] = Eigen::Vector2d(u ,v);
         double X = point_cur[0], Y = point_cur[1], Z = point_cur[2],
@@ -257,7 +257,7 @@ void JacobianAccumulator::accumulate_jacobian(const cv::Range &range) {
 
                 Matrix26d J_pixel_xi;
                 Eigen::Vector2d J_img_pixel;
-            
+
                 // du / dx ; here x is the change of variables
                 J_pixel_xi(0, 0) = fx * Z_inv;
                 J_pixel_xi(0, 1) = 0;
@@ -303,7 +303,7 @@ void DirectPoseEstimationMultiLayer(
     const VecVector2d &px_ref,
     const vector<double> depth_ref,
     Sophus::SE3d &T21) {
-    
+
     // parameters for multi-layer scaling
     int pyramids = 4;
     double pyramid_scale = 0.5;
