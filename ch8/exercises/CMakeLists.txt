@@ -14,8 +14,8 @@ include_directories(${OpenCV_INCLUDE_DIRS})
 include_directories("/usr/include/eigen3")
 
 # ceres
-#find_package(Ceres REQUIRED)
-#include_directories(${CERES_INCLUDE_DIRS})
+find_package(Ceres REQUIRED)
+include_directories(${CERES_INCLUDE_DIRS})
 
 # Sophus
 #find_package(Sophus REQUIRED)
@@ -36,3 +36,11 @@ target_link_libraries(directSparseRandomG2O ${OpenCV_LIBS} ${G2O_LIBS} g2o_core 
 
 add_executable( directSparseFeatureG2O  direct_method_sparse_keypoints_g2o.cpp)
 target_link_libraries(directSparseFeatureG2O ${OpenCV_LIBS} ${G2O_LIBS} g2o_core g2o_stuff g2o_csparse_extension cxsparse)
+
+
+#add_executable( directSparseFeatureCeres direct_method_sparse_keypoints_ceres.cpp )
+#target_link_libraries(directSparseFeatureCeres ${OpenCV_LIBS} ${CERES_LIBRARIES})
+
+
+add_executable( directSemiDenseG2O direct_method_semi_g2o.cpp )
+target_link_libraries(directSemiDenseG2O ${OpenCV_LIBS} ${G2O_LIBS} g2o_core g2o_stuff g2o_csparse_extension cxsparse)

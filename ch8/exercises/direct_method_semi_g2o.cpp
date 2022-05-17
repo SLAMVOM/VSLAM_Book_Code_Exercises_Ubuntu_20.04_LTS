@@ -1,7 +1,9 @@
 /******************************************************************************
 * This script implements a direct method in the g2o framework. According to
 * the classification in Gao's VSLAM book, the implemented approach is a
-* sparse direct method.
+* semi-dense direct method.
+* 
+* The image gradients are calculated by using the Laplace filter in OpenCV.
 *
 * The depth information value of the first image is given by a disparity map.
 ******************************************************************************/
@@ -12,14 +14,16 @@
 */
 
 // Author: MT
-// Creation Date: 2022-May-12
-// Previous Edit: 2022-May-13
+// Creation Date: 2022-May-17
+// Previous Edit: 2022-May-17
 
 
 #include <opencv2/opencv.hpp>
 #include <opencv2/features2d/features2d.hpp>
-#include "opencv2/xfeatures2d.hpp" // comment this line if the contribute module of opencv is not installed
+// #include "opencv2/xfeatures2d.hpp" // comment this line if the contribute module of opencv is not installed
 #include <opencv2/highgui/highgui.hpp>
+#include <opencv2/imgproc/imgproc.hpp>
+#include <opencv2/imgcodecs.hpp>
 #include <boost/format.hpp>
 // #include <pangolin/pangolin.h>
 #include <iostream>
@@ -40,7 +44,9 @@
 // Lie group utility functions
 #include "lie_utils.h"
 
-#define DETECTOR    2 // flag for different image feature key point detector: 0 - GFTT; 1 - SIFT; 2 - ORB
+#define DETECTOR    9 // flag for different image feature key point detector: 0 - GFTT; 1 - SIFT; 2 - ORB; 9 - semi-dense direct method
+
+#define GRAD_THRESHOLD    200 // a user-defined image gradient threshold [0-255], larger->less px selected, smaller->more px selected
 
 using namespace std;
 
@@ -266,6 +272,14 @@ int main(int argc, char **argv) {
     #elif (DETECTOR == 2) // 2 - ORB - Oriented FAST
         cv::Ptr<cv::ORB> detector = cv::ORB::create(nPoints);
         use_detector = true;
+    #elif (DETECTOR == 9)
+        // Declare the variables to be used
+        int kernel_size = 3;
+        int scale = 1; // scale factor for the computed Laplacian values [optional]
+        int delta = 0; // delta value to be added to the results before storing into dst image [optional]
+        int ddepth = CV_16S; // single-channel 2-byte singed integer
+        const char* window_name = "Laplace kernel filtered";
+        use_detector = false;
     #else // if any other number specified, using random pixel locations
         use_detector = false;
     #endif
@@ -284,7 +298,30 @@ int main(int argc, char **argv) {
             depth_ref.push_back(depth);
             pixels_ref.push_back(Eigen::Vector2d(x, y));
         }
-    #else  // if no valid feature detector is specified
+    #elif ( DETECTOR == 9 ) // if using semi-dense method
+        cv::Mat abs_grad_left, img_grad_left;
+        cv::Laplacian( left_img, img_grad_left, ddepth, kernel_size, scale, delta, cv::BORDER_DEFAULT );
+        // coverting back to CV_8U - [0, 255]
+        cv::convertScaleAbs( img_grad_left, abs_grad_left ); // implemented as: scaling->taking absolute val->casting to uint8
+        cv::imshow(window_name, abs_grad_left);
+        cv::waitKey(0);
+
+        double focal_times_baseline = fu * baseline;
+        int N_r = abs_grad_left.rows - boarder - 1, N_c = abs_grad_left.cols - boarder - 1;
+
+        int max_grad = -1;
+        // looping through the gradient image to find out all the pixels that have a image gradient more than GRAD_THRESHOLD
+        for (int y = boarder; y < N_r; y++)
+            for (int x = boarder; x < N_c; x++) {
+                if (abs_grad_left.at<uchar>(y, x) >= GRAD_THRESHOLD) {
+                    int disparity = disparity_img.at<uchar>(y, x);
+                    double depth = focal_times_baseline / disparity; // converting disparity value to depth
+                    depth_ref.push_back(depth);
+                    pixels_ref.push_back(Eigen::Vector2d(x, y));
+                }
+            }
+        cout << "\nThere are " << pixels_ref.size() << " pixels with a gradient greater than GRAD_THRESHOLD.\n" << endl; 
+    #else  // if neither valid feature detector nor semi-dense method is specified
         // sampling pixel locations in the ref image and loading depth data from disparity map
         for (int i = 0; i < nPoints; i++) {
             int x = rng.uniform(boarder, left_img.cols - boarder); // avoid picking pixels that are close to the boarder
@@ -383,7 +420,7 @@ void DirectPoseEstimationSingleLayer(
                 edge->setVertex(0, v_cam); // the vertex to be optimize is the camera pose
                 edge->setMeasurement(GetPixelValue(img1, px_ref[i][0]+du, px_ref[i][1]+dv));
                 edge->setInformation(Eigen::Matrix<double, 1, 1>::Identity());
-                // edge->setRobustKernel(new g2o::RobustKernelHuber()); // using a robust kernel, can comment this line to not use
+                edge->setRobustKernel(new g2o::RobustKernelHuber()); // using a robust kernel, can comment this line to not use
                 optimizer.addEdge(edge);
             }
     }
