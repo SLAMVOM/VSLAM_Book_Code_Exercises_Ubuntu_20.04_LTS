@@ -24,4 +24,8 @@ target_link_libraries(DenseInvDepth Sophus::Sophus ${THIRD_PARTY_LIBS})
 add_executable(DenseInvDepthAffine dense_InvDepth_Affine.cpp)
 target_link_libraries(DenseInvDepthAffine Sophus::Sophus ${THIRD_PARTY_LIBS})
 
+add_executable(SemiInvDepthAffine semi_InvDepth_Affine.cpp)
+target_link_libraries(SemiInvDepthAffine Sophus::Sophus ${THIRD_PARTY_LIBS})
 
+add_executable(SemiDepth semi_depth.cpp)
+target_link_libraries(SemiDepth Sophus::Sophus ${THIRD_PARTY_LIBS})
